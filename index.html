@@ -3,21 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Interactive KNX Q&A</title>
+    <title>Interactive KNX Quizzes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <!-- Chosen Palette: Light Slate & Indigo -->
-    <!-- Application Structure Plan: The application is structured as a vertical accordion list of questions and answers. This Q&A format directly addresses the user's request. Each question is a clickable header that reveals the answer, allowing users to test their knowledge or quickly find specific information. This structure is highly intuitive and user-friendly for a quiz or FAQ-style content, focusing on direct information retrieval. -->
-    <!-- Visualization & Content Choices: 1. Q&A List -> Goal: Inform/Organize -> Viz: Accordion (HTML/Tailwind) -> Interaction: Click-to-reveal answer -> Justification: An accordion is the most effective UI pattern for a Q&A format. It keeps the interface clean by hiding answers until they are requested, preventing information overload and encouraging active engagement from the user. -> Library/Method: Vanilla JS. -->
+    <!-- Chosen Palette: Cool Gray & Indigo -->
+    <!-- Application Structure Plan: The application is structured with a primary tab navigation to switch between two distinct quizzes. Each quiz's content is then presented in a vertical accordion list. This tabbed, multi-quiz structure allows for clear separation of content while maintaining the intuitive Q&A interaction model. It's highly responsive, collapsing gracefully on mobile devices. -->
+    <!-- Visualization & Content Choices: 1. Tabbed Interface -> Goal: Organize -> Viz: HTML/Tailwind Tabs -> Interaction: Click to switch content -> Justification: Tabs are the standard and most effective UI pattern for separating distinct sets of content on a single page. 2. Q&A Accordion -> Goal: Inform -> Viz: Accordion -> Interaction: Click-to-reveal -> Justification: Reusing the accordion for each quiz maintains a consistent and user-friendly experience for question-based content. -> Library/Method: Vanilla JS. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
       body {
         font-family: "Inter", sans-serif;
         background-color: #f8fafc;
         color: #1e293b;
+      }
+      .tab-button {
+        transition: color 0.3s, border-color 0.3s;
+      }
+      .tab-button.active {
+        color: #4f46e5;
+        border-color: #4f46e5;
+      }
+      .quiz-content {
+        display: none;
+      }
+      .quiz-content.active {
+        display: block;
+        animation: fadeIn 0.5s ease-in-out;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
       .qa-item {
         border-bottom: 1px solid #e2e8f0;
@@ -33,13 +57,10 @@
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
-        padding-left: 1.5rem;
-        padding-right: 1.5rem;
       }
       .answer.open {
-        max-height: 500px; /* Adjust as needed */
-        padding-top: 1rem;
-        padding-bottom: 1.5rem;
+        max-height: 500px;
+        padding: 1rem 1.5rem 1.5rem;
       }
       .icon {
         transition: transform 0.5s ease-in-out;
@@ -55,22 +76,27 @@
         }
         header,
         footer,
-        .print-button-container {
+        .print-button-container,
+        .tabs-nav {
           display: none;
         }
         main {
-          padding-top: 0;
-          padding-bottom: 0;
+          padding: 0 !important;
+          margin: 0 !important;
         }
-        #qa-container {
-          box-shadow: none;
+        .quiz-content:not(.active) {
+          display: none;
+        }
+        .quiz-content.active {
+          display: block !important;
+        }
+        .qa-container {
+          box-shadow: none !important;
           border: 1px solid #e2e8f0;
         }
         .question {
           cursor: default;
-        }
-        .question:hover {
-          background-color: transparent;
+          background-color: transparent !important;
         }
         .icon {
           display: none;
@@ -78,7 +104,7 @@
         .answer {
           max-height: none !important;
           overflow: visible !important;
-          padding: 0 1.5rem 1.5rem 1.5rem !important;
+          padding: 0 1.5rem 1.5rem !important;
           background-color: transparent !important;
           -webkit-print-color-adjust: exact;
           color-adjust: exact;
@@ -91,61 +117,141 @@
   </head>
   <body class="antialiased">
     <header class="bg-white shadow-sm">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <h1 class="text-3xl font-bold text-slate-800 text-center">
-          KNX System Q&A
+          KNX Systems: Interactive Quizzes
         </h1>
         <p class="text-slate-500 text-center mt-2">
-          Click on a question to reveal the answer.
+          Select a quiz and click on a question to reveal the answer.
         </p>
       </div>
     </header>
 
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="print-button-container text-right mb-6">
-        <button
-          onclick="window.print()"
-          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            class="mr-2 -ml-1"
-          >
-            <path
-              fill-rule="evenodd"
-              d="M5 4v3H4a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          Print as PDF
-        </button>
-      </div>
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div
-        id="qa-container"
-        class="bg-white rounded-xl shadow-md overflow-hidden"
+        class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4"
       >
-        <!-- Q&A items will be injected here by JavaScript -->
+        <div class="tabs-nav border-b border-gray-200">
+          <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+            <button
+              class="tab-button active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm"
+              data-tab="quiz1"
+            >
+              Quiz 1: General Knowledge
+            </button>
+            <button
+              class="tab-button whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              data-tab="quiz2"
+            >
+              Quiz 2: Technical Specs
+            </button>
+          </nav>
+        </div>
+        <div class="print-button-container">
+          <button
+            onclick="window.print()"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              class="mr-2 -ml-1"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5 4v3H4a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Print Active Quiz
+          </button>
+        </div>
+      </div>
+
+      <div id="quiz1" class="quiz-content active">
+        <div
+          class="qa-container bg-white rounded-xl shadow-md overflow-hidden"
+        ></div>
+      </div>
+      <div id="quiz2" class="quiz-content">
+        <div
+          class="qa-container bg-white rounded-xl shadow-md overflow-hidden"
+        ></div>
       </div>
     </main>
 
     <footer class="bg-white mt-12 border-t">
       <div
-        class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-slate-500"
+        class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-slate-500"
       >
         <p>
-          &copy; 2025 Eng Amaal Al-Menoufy Interactive KNX Guide. A conceptual
-          dashboard for learning.
+          &copy; 2024 Interactive KNX Guide. A conceptual dashboard for
+          learning.
         </p>
       </div>
     </footer>
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        const qaData = [
+        const quiz1Data = [
+          {
+            question: "KNX is a decentralized system.",
+            answer:
+              "<strong>True.</strong> This is a core principle of KNX, meaning devices can function independently without a central controller.",
+          },
+          {
+            question: "Can we use OpenTherm to control shutters?",
+            answer:
+              "<strong>False.</strong> OpenTherm is a communication protocol specifically for heating systems like boilers and thermostats.",
+          },
+          {
+            question: "DALI is a lighting control system.",
+            answer:
+              "<strong>True.</strong> DALI (Digital Addressable Lighting Interface) is an international standard for controlling lighting.",
+          },
+          {
+            question:
+              "A gateway is a device used to know the status of an output.",
+            answer:
+              "<strong>False.</strong> A gateway is used to connect and translate between different communication protocols (e.g., KNX and IP). An actuator controls an output, and its status can be read back on the bus.",
+          },
+          {
+            question: "Shelly is a system based on an open protocol.",
+            answer:
+              "<strong>True.</strong> Shelly devices use Wi-Fi and have open APIs, allowing for integration with many different smart home systems.",
+          },
+          {
+            question:
+              "The KNX Association is a company that develops products.",
+            answer:
+              "<strong>False.</strong> The KNX Association is a non-profit organization that maintains and develops the KNX standard. It does not manufacture products itself.",
+          },
+          {
+            question: "DALI is a system based on an open protocol.",
+            answer:
+              "<strong>True.</strong> DALI is an open standard (IEC 62386), ensuring interoperability between manufacturers.",
+          },
+          {
+            question: "LON (LonWorks) is a closed protocol.",
+            answer:
+              "<strong>False.</strong> LonWorks is an open protocol, standardized as ISO/IEC 14908.",
+          },
+          {
+            question: "Nikobus is a hybrid system regarding centralization.",
+            answer:
+              "<strong>True.</strong> Nikobus architecture has both centralized and decentralized characteristics, making it a hybrid system.",
+          },
+          {
+            question: "EGO-n is a complex control system.",
+            answer:
+              "<strong>False.</strong> EGO-n by Hager was designed as a simpler, more intuitive alternative to full-scale KNX systems, particularly for residential use.",
+          },
+        ];
+
+        const quiz2Data = [
           {
             question: "How many wires are in a standard KNX cable?",
             answer:
@@ -182,16 +288,15 @@
             question:
               "What are the major differences between YCYM & J-Y(St)Y cables?",
             answer:
-              "The primary difference is the insulation level and test voltage. <br> &bull; <strong>YCYM:</strong> Has a higher test voltage (typically 4 kV), allowing it to be installed in the same cable duct as mains voltage cables (e.g., 230V). It's more robust against electromagnetic interference (EMI). <br> &bull; <strong>J-Y(St)Y:</strong> This is a standard KNX cable with a lower test voltage. It must be run in separate conduits from mains power.",
+              "The primary difference is the insulation level and test voltage. <br> &bull; <strong>YCYM:</strong> Has a higher test voltage (typically 4 kV), allowing it to be installed in the same cable duct as mains voltage cables (e.g., 230V). <br> &bull; <strong>J-Y(St)Y:</strong> This is a standard KNX cable with a lower test voltage and must be run in separate conduits from mains power.",
           },
           {
             question: "What is the construction of a typical KNX cable?",
             answer:
-              "A standard KNX cable consists of: <br> &bull; <strong>Conductors:</strong> Solid copper cores (0.8 mm). <br> &bull; <strong>Cores:</strong> Two twisted pairs (typically red/black and yellow/white). <br> &bull; <strong>Insulation:</strong> PVC or PE insulation for each core. <br> &bull; <strong>Shielding:</strong> An aluminum foil shield and a drain wire to protect against interference. <br> &bull; <strong>Outer Sheath:</strong> A final jacket, usually green, often made from Low Smoke Zero Halogen (LSZH) material.",
+              "A standard KNX cable consists of: <br> &bull; <strong>Conductors:</strong> Solid copper cores (0.8 mm). <br> &bull; <strong>Cores:</strong> Two twisted pairs (typically red/black and yellow/white). <br> &bull; <strong>Shielding:</strong> An aluminum foil shield and a drain wire. <br> &bull; <strong>Outer Sheath:</strong> A final jacket, usually green (LSZH).",
           },
           {
-            question:
-              "Who are three major vendors of KNX components and cables?",
+            question: "Who are three major vendors of KNX components?",
             answer:
               "Three major manufacturers in the KNX ecosystem are: <br> a) <strong>Siemens</strong> <br> b) <strong>Schneider Electric</strong> <br> c) <strong>ABB</strong>",
           },
@@ -202,35 +307,77 @@
           },
         ];
 
-        const qaContainer = document.getElementById("qa-container");
-
-        qaData.forEach((item, index) => {
-          const qaItem = document.createElement("div");
-          qaItem.className = "qa-item";
-
-          qaItem.innerHTML = `
-                    <div class="question p-4 flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-slate-800">${
-                          index + 1
-                        }. ${item.question}</h3>
-                        <div class="icon text-slate-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        function createQaList(container, data) {
+          data.forEach((item, index) => {
+            const qaItem = document.createElement("div");
+            qaItem.className = "qa-item";
+            qaItem.innerHTML = `
+                        <div class="question p-4 flex justify-between items-center">
+                            <h3 class="text-lg font-medium text-slate-800 pr-4">${
+                              index + 1
+                            }. ${item.question}</h3>
+                            <div class="icon text-slate-500 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
                         </div>
-                    </div>
-                    <div class="answer bg-slate-50 text-slate-700">
-                        <p>${item.answer}</p>
-                    </div>
-                `;
-          qaContainer.appendChild(qaItem);
+                        <div class="answer bg-slate-50 text-slate-700 px-6">
+                            <p>${item.answer}</p>
+                        </div>
+                    `;
+            container.appendChild(qaItem);
+          });
+        }
+
+        const quiz1Container = document.querySelector("#quiz1 .qa-container");
+        const quiz2Container = document.querySelector("#quiz2 .qa-container");
+        createQaList(quiz1Container, quiz1Data);
+        createQaList(quiz2Container, quiz2Data);
+
+        document.querySelectorAll(".qa-container").forEach((container) => {
+          container.addEventListener("click", function (e) {
+            const questionHeader = e.target.closest(".question");
+            if (questionHeader) {
+              const answer = questionHeader.nextElementSibling;
+              questionHeader.classList.toggle("open");
+              answer.classList.toggle("open");
+            }
+          });
         });
 
-        qaContainer.addEventListener("click", function (e) {
-          const questionHeader = e.target.closest(".question");
-          if (questionHeader) {
-            const answer = questionHeader.nextElementSibling;
-            questionHeader.classList.toggle("open");
-            answer.classList.toggle("open");
-          }
+        const tabs = document.querySelectorAll(".tab-button");
+        const quizContents = document.querySelectorAll(".quiz-content");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((t) =>
+              t.classList.remove(
+                "active",
+                "text-gray-500",
+                "hover:text-gray-700",
+                "hover:border-gray-300"
+              )
+            );
+            tabs.forEach((t) => {
+              if (t === tab) {
+                t.classList.add("active");
+              } else {
+                t.classList.add(
+                  "text-gray-500",
+                  "hover:text-gray-700",
+                  "hover:border-gray-300"
+                );
+              }
+            });
+
+            const target = tab.getAttribute("data-tab");
+            quizContents.forEach((content) => {
+              if (content.id === target) {
+                content.classList.add("active");
+              } else {
+                content.classList.remove("active");
+              }
+            });
+          });
         });
       });
     </script>
