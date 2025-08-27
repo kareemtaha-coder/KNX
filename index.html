@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive KNX Q&A</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Chosen Palette: Light Slate & Indigo -->
+    <!-- Application Structure Plan: The application is structured as a vertical accordion list of questions and answers. This Q&A format directly addresses the user's request. Each question is a clickable header that reveals the answer, allowing users to test their knowledge or quickly find specific information. This structure is highly intuitive and user-friendly for a quiz or FAQ-style content, focusing on direct information retrieval. -->
+    <!-- Visualization & Content Choices: 1. Q&A List -> Goal: Inform/Organize -> Viz: Accordion (HTML/Tailwind) -> Interaction: Click-to-reveal answer -> Justification: An accordion is the most effective UI pattern for a Q&A format. It keeps the interface clean by hiding answers until they are requested, preventing information overload and encouraging active engagement from the user. -> Library/Method: Vanilla JS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f8fafc;
+        color: #1e293b;
+      }
+      .qa-item {
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .question {
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      .question:hover {
+        background-color: #f1f5f9;
+      }
+      .answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+      }
+      .answer.open {
+        max-height: 500px; /* Adjust as needed */
+        padding-top: 1rem;
+        padding-bottom: 1.5rem;
+      }
+      .icon {
+        transition: transform 0.5s ease-in-out;
+      }
+      .question.open .icon {
+        transform: rotate(180deg);
+      }
+
+      @media print {
+        body {
+          background-color: #ffffff;
+          color: #000000;
+        }
+        header,
+        footer,
+        .print-button-container {
+          display: none;
+        }
+        main {
+          padding-top: 0;
+          padding-bottom: 0;
+        }
+        #qa-container {
+          box-shadow: none;
+          border: 1px solid #e2e8f0;
+        }
+        .question {
+          cursor: default;
+        }
+        .question:hover {
+          background-color: transparent;
+        }
+        .icon {
+          display: none;
+        }
+        .answer {
+          max-height: none !important;
+          overflow: visible !important;
+          padding: 0 1.5rem 1.5rem 1.5rem !important;
+          background-color: transparent !important;
+          -webkit-print-color-adjust: exact;
+          color-adjust: exact;
+        }
+        .qa-item:last-child {
+          border-bottom: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="antialiased">
+    <header class="bg-white shadow-sm">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <h1 class="text-3xl font-bold text-slate-800 text-center">
+          KNX System Q&A
+        </h1>
+        <p class="text-slate-500 text-center mt-2">
+          Click on a question to reveal the answer.
+        </p>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="print-button-container text-right mb-6">
+        <button
+          onclick="window.print()"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            class="mr-2 -ml-1"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M5 4v3H4a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          Print as PDF
+        </button>
+      </div>
+      <div
+        id="qa-container"
+        class="bg-white rounded-xl shadow-md overflow-hidden"
+      >
+        <!-- Q&A items will be injected here by JavaScript -->
+      </div>
+    </main>
+
+    <footer class="bg-white mt-12 border-t">
+      <div
+        class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-slate-500"
+      >
+        <p>
+          &copy; 2025 Eng Amaal Al-Menoufy Interactive KNX Guide. A conceptual
+          dashboard for learning.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const qaData = [
+          {
+            question: "How many wires are in a standard KNX cable?",
+            answer:
+              "Standard KNX cables come in two main configurations: <br> a) <strong>4 wires</strong> (2 twisted pairs). One pair (red/black) is for communication and power. The second pair (yellow/white) is typically reserved for auxiliary power or other uses. <br> b) <strong>2 wires</strong> (1 twisted pair), used when the auxiliary pair is not needed.",
+          },
+          {
+            question:
+              "What is the maximum distance between a power supply and a KNX device?",
+            answer:
+              "The maximum permitted distance is <strong>350 meters</strong>.",
+          },
+          {
+            question: "What is the maximum distance between two KNX devices?",
+            answer:
+              "The maximum permitted distance is <strong>700 meters</strong>.",
+          },
+          {
+            question: "What is the maximum total length of a single KNX line?",
+            answer:
+              "The maximum total length of the bus cable in one line is <strong>1000 meters</strong>.",
+          },
+          {
+            question: "What does EIB stand for?",
+            answer:
+              "EIB is an abbreviation for <strong>European Installation Bus</strong>.",
+          },
+          {
+            question:
+              "KNX is the result of a merger between which organizations?",
+            answer:
+              "KNX was formed by the merger of three associations: <br> a) <strong>EIB</strong> (European Installation Bus) <br> b) <strong>BatiBUS</strong> <br> c) <strong>EHS</strong> (European Home Systems)",
+          },
+          {
+            question:
+              "What are the major differences between YCYM & J-Y(St)Y cables?",
+            answer:
+              "The primary difference is the insulation level and test voltage. <br> &bull; <strong>YCYM:</strong> Has a higher test voltage (typically 4 kV), allowing it to be installed in the same cable duct as mains voltage cables (e.g., 230V). It's more robust against electromagnetic interference (EMI). <br> &bull; <strong>J-Y(St)Y:</strong> This is a standard KNX cable with a lower test voltage. It must be run in separate conduits from mains power.",
+          },
+          {
+            question: "What is the construction of a typical KNX cable?",
+            answer:
+              "A standard KNX cable consists of: <br> &bull; <strong>Conductors:</strong> Solid copper cores (0.8 mm). <br> &bull; <strong>Cores:</strong> Two twisted pairs (typically red/black and yellow/white). <br> &bull; <strong>Insulation:</strong> PVC or PE insulation for each core. <br> &bull; <strong>Shielding:</strong> An aluminum foil shield and a drain wire to protect against interference. <br> &bull; <strong>Outer Sheath:</strong> A final jacket, usually green, often made from Low Smoke Zero Halogen (LSZH) material.",
+          },
+          {
+            question:
+              "Who are three major vendors of KNX components and cables?",
+            answer:
+              "Three major manufacturers in the KNX ecosystem are: <br> a) <strong>Siemens</strong> <br> b) <strong>Schneider Electric</strong> <br> c) <strong>ABB</strong>",
+          },
+          {
+            question: "What are the common roll lengths for KNX cable?",
+            answer:
+              "Commonly available roll lengths for KNX cable are: <br> a) <strong>100 m</strong> <br> b) <strong>250 m</strong> (or 200 m) <br> c) <strong>500 m</strong>",
+          },
+        ];
+
+        const qaContainer = document.getElementById("qa-container");
+
+        qaData.forEach((item, index) => {
+          const qaItem = document.createElement("div");
+          qaItem.className = "qa-item";
+
+          qaItem.innerHTML = `
+                    <div class="question p-4 flex justify-between items-center">
+                        <h3 class="text-lg font-medium text-slate-800">${
+                          index + 1
+                        }. ${item.question}</h3>
+                        <div class="icon text-slate-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </div>
+                    <div class="answer bg-slate-50 text-slate-700">
+                        <p>${item.answer}</p>
+                    </div>
+                `;
+          qaContainer.appendChild(qaItem);
+        });
+
+        qaContainer.addEventListener("click", function (e) {
+          const questionHeader = e.target.closest(".question");
+          if (questionHeader) {
+            const answer = questionHeader.nextElementSibling;
+            questionHeader.classList.toggle("open");
+            answer.classList.toggle("open");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
